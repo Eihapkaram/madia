@@ -33,17 +33,15 @@ WORKDIR /var/www
 COPY . .
 
 # =========================
-# Install PHP deps
+# Install PHP dependencies
 # =========================
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # =========================
-# Install JS deps + Build assets
+# Install JS dependencies + build
 # =========================
-RUN if [ -f package.json ]; then \
-        npm install && \
-        npm run build; \
-    fi
+RUN npm install
+RUN npm run build
 
 # =========================
 # Laravel folders + permissions
@@ -57,17 +55,12 @@ RUN mkdir -p \
 RUN chmod -R 775 storage bootstrap/cache
 
 # =========================
-# IMPORTANT: No cache in build
-# =========================
-# (Railway handles env at runtime)
-
-# =========================
 # Port
 # =========================
 EXPOSE 8080
 
 # =========================
-# Runtime command
+# Runtime
 # =========================
 CMD sh -c "\
 php artisan migrate --force && \
