@@ -10,6 +10,10 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+# 🔥 إضافة Node.js (Tailwind يحتاجه)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs
+
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
@@ -20,15 +24,18 @@ COPY . .
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
+# 🔥 تثبيت npm dependencies + بناء Tailwind
+RUN if [ -f package.json ]; then \
+        npm install && \
+        npm run build; \
+    fi
+
 RUN mkdir -p storage/framework/cache \
     storage/framework/sessions \
     storage/framework/views \
     bootstrap/cache
 
 RUN chmod -R 775 storage bootstrap/cache
-
-# ❌ ممنوع generate key هنا
-# ❌ ممنوع cache config هنا
 
 EXPOSE 8080
 
