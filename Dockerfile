@@ -1,6 +1,6 @@
 FROM php:8.3-cli
 
-# تثبيت الباكدجات المطلوبة
+# تثبيت الحزم المطلوبة
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -28,38 +28,46 @@ RUN apt-get update && apt-get install -y \
         intl \
         gd \
         bcmath \
-        pcntl
+        pcntl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # تثبيت Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
+# السماح بتشغيل Composer كـ root
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
 WORKDIR /var/www
 
-# نسخ ملفات Composer
-COPY composer.json composer.lock ./
+# انسخ المشروع بالكامل أولاً
+COPY . .
 
-# تثبيت Dependencies
+# تثبيت الاعتماديات
 RUN composer install \
     --no-dev \
     --optimize-autoloader \
     --no-interaction
 
-# نسخ المشروع
-COPY . .
+# إنشاء مجلدات Laravel المطلوبة
+RUN mkdir -p \
+    storage/framework/cache \
+    storage/framework/sessions \
+    storage/framework/views \
+    bootstrap/cache
 
-# صلاحيات
-RUN mkdir -p storage/framework/{cache,sessions,views} bootstrap/cache && \
-    chmod -R 775 storage bootstrap/cache
+# الصلاحيات
+RUN chmod -R 775 storage bootstrap/cache
 
-# إنشاء APP_KEY لو مش موجود
+# إنشاء APP_KEY إذا لم يكن موجودًا
 RUN php artisan key:generate --force || true
 
 # تحسين الأداء
-RUN php artisan config:cache || true && \
-    php artisan route:cache || true && \
-    php artisan view:cache || true
+RUN php artisan config:cache || true
+RUN php artisan route:cache || true
+RUN php artisan view:cache || true
 
-EXPOSE $PORT
+EXPOSE 8080
 
 CMD php artisan migrate --force && \
     php artisan storage:link || true && \
