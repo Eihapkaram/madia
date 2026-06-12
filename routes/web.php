@@ -4,11 +4,14 @@ use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return redirect('/ar');
+    return redirect()->route('home', ['locale' => 'ar']);
 });
 
 Route::get('/{locale}', function ($locale) {
-    if (! in_array($locale, ['ar', 'en'])) {
+
+    $supportedLocales = ['ar', 'en'];
+
+    if (!in_array($locale, $supportedLocales)) {
         abort(404);
     }
 
@@ -18,4 +21,5 @@ Route::get('/{locale}', function ($locale) {
         'locale' => $locale,
         'dir' => $locale === 'ar' ? 'rtl' : 'ltr',
     ]);
-})->name('home');
+
+})->where('locale', 'ar|en')->name('home');
