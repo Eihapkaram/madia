@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # =========================
-# Node.js (Vite + Tailwind)
+# Node.js
 # =========================
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs
@@ -38,7 +38,7 @@ COPY . .
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # =========================
-# Install JS dependencies + build
+# Install JS + Build
 # =========================
 RUN npm install
 RUN npm run build
@@ -55,6 +55,14 @@ RUN mkdir -p \
 RUN chmod -R 775 storage bootstrap/cache
 
 # =========================
+# IMPORTANT: fix Laravel production cache + Vite
+# =========================
+RUN php artisan optimize:clear
+RUN php artisan config:cache
+RUN php artisan route:cache
+RUN php artisan view:cache
+
+# =========================
 # Port
 # =========================
 EXPOSE 8080
@@ -64,6 +72,8 @@ EXPOSE 8080
 # =========================
 CMD sh -c "\
 php artisan migrate --force && \
-php artisan config:clear && \
-php artisan cache:clear && \
+php artisan optimize:clear && \
+php artisan config:cache && \
+php artisan route:cache && \
+php artisan view:cache && \
 php artisan serve --host=0.0.0.0 --port=\${PORT:-8080}"
